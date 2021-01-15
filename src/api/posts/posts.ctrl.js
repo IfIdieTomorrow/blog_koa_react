@@ -56,9 +56,39 @@ export const write = async ctx => {
 GET /api/posts
 */
 export const list = async ctx => {
+  // query는 문자열이기 때문에 숫자로 변환해 주어야 함
+  // 값이 주어지지 않으면 1을 기본으로 사용
+
+  /* 페이징을 위한 페이지 번호 설정 1페이지당 10개씩, 페이지 번호가 없을시에는 디폴트로 1페이지 */
+  const page = parseInt(ctx.query.page || '1', 10);
+  if (page < 1) {
+    ctx.status = 400;
+    return;
+  }
+
   try {
-    const posts = await Post.find().exec();
-    ctx.body = posts;
+    const posts = await Post.find()
+      .sort({ _id: -1 })
+      .limit(10)
+      .skip((page - 1) * 10)
+      .lean() // 데이터를 처음부터 JSON형식으로 조회
+      .exec();
+    /* 클라이언트에게 페이지 개수를 알려주기 위한 커스텀 header를 설정 */
+    const postCount = await Post.countDocuments().exec();
+    ctx.set('Last-Page', Math.ceil(postCount / 10));
+    /* 글 내용이 200자가 넘어가면 뒤에 ...을붙이고 문자열을 자르는 기능 설정 */
+    // 방법 1
+    // ctx.body = posts
+    //   .map(post => post.toJSON)
+    //   .map(post => ({
+    //     ...post,
+    //     body: post.body.length < 200 ? post.body : `${post.body.slice(0, 200)}...`,
+    //   }));
+    // 방법 2
+    ctx.body = posts.map(post => ({
+      ...posts,
+      body: post.body.length < 200 ? post.body : `${post.body.slice(0, 200)}...`,
+    })); // 대신 Post모델에서 글을 가져올 때 .lean() 함수를 사용해야 함
   } catch (error) {
     ctx.throw(500, error);
   }

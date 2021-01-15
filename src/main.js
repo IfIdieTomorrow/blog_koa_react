@@ -13,7 +13,9 @@ const { PORT, MONGO_URI } = process.env;
 // mongoDB 연결
 mongoose
   .connect(MONGO_URI, { useNewUrlParser: true, useFindAndModify: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB is Connected!'))
+  .then(() => {
+    console.log('MongoDB is Connected!');
+  })
   .catch(err => console.error(err));
 
 const app = new Koa();
