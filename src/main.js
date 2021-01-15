@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 
 // 라우팅
 import api from './api';
+import jwtMiddleware from './lib/jwtMiddleware';
 
 // process.env 에서 설정 정보 가져오기
 const { PORT, MONGO_URI } = process.env;
@@ -25,6 +26,7 @@ router.use('/api', api.routes()); // api 라우터 적용
 
 // 라우터 적용 전에 bodyParser 적용
 app.use(bodyParser());
+app.use(jwtMiddleware);
 
 // app 인스턴스에 라우터 적용
 app.use(router.routes()).use(router.allowedMethods());

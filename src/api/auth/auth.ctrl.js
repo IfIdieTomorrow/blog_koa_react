@@ -29,7 +29,6 @@ export const register = async ctx => {
       ctx.status = 409; // Conflict
       return;
     }
-
     const user = new User({
       username,
     });
@@ -38,6 +37,11 @@ export const register = async ctx => {
     // 암호화된 hashedPassword를 유저 정보에서 삭제하는
     // 인스턴스 메서드 정의
     ctx.body = await user.serialize();
+    const token = await user.generateToken();
+    ctx.cookies.set('access_token', token, {
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
+      httpOnly: true,
+    });
   } catch (error) {
     ctx.throw(500, error);
   }
@@ -71,15 +75,33 @@ export const login = async ctx => {
       return;
     }
     ctx.body = await user.serialize();
+    const token = await user.generateToken();
+    ctx.cookies.set('access_token', token, {
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
+      httpOnly: true,
+    });
   } catch (error) {
     ctx.throw(500, error);
   }
 };
 
+/*
+GET /api/auth/check
+*/
 export const check = async ctx => {
-  // 인증
+  const { user } = ctx.state;
+  if (!user) {
+    //로그인 중 아님
+    ctx.status = 401;
+    return;
+  }
+  ctx.body = user;
 };
 
+/* 
+POST /api/auth/logout
+*/
 export const logout = async ctx => {
-  // 로그아웃
+  ctx.cookies.set('access_token');
+  ctx.status = 204;
 };
